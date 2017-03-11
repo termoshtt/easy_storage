@@ -28,7 +28,7 @@ impl Storage for MsgpackDir {
     type SaveError = String; // TODO define error enum
     type LoadError = String; // TODO define error enum
 
-    fn save_as<T: Encodable>(&self, obj: &T, name: Self::Key) -> Result<(), Self::SaveError> {
+    fn save_as<T: Encodable>(&self, obj: &T, name: &Self::Key) -> Result<(), Self::SaveError> {
         let filename = self.path.join(name);
         let mut buf = File::create(filename).ok().unwrap();
         let mut enc = Encoder::new(&mut buf);
@@ -36,7 +36,7 @@ impl Storage for MsgpackDir {
         Ok(())
     }
 
-    fn load<T: Decodable>(&self, name: Self::Key) -> Result<T, Self::LoadError> {
+    fn load<T: Decodable>(&self, name: &Self::Key) -> Result<T, Self::LoadError> {
         let filename = self.path.join(name);
         let mut buf = File::open(filename).unwrap();
         let mut dec = Decoder::new(&mut buf);

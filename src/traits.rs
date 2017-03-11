@@ -5,8 +5,8 @@ pub trait Storage {
     type Key;
     type SaveError;
     type LoadError;
-    fn save_as<T: Encodable>(&self, &T, Self::Key) -> Result<(), Self::SaveError>;
-    fn load<T: Decodable>(&self, Self::Key) -> Result<T, Self::LoadError>;
+    fn save_as<T: Encodable>(&self, &T, &Self::Key) -> Result<(), Self::SaveError>;
+    fn load<T: Decodable>(&self, &Self::Key) -> Result<T, Self::LoadError>;
 }
 
 pub trait AutoStorage: Storage {
