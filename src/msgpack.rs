@@ -25,22 +25,75 @@ impl MsgpackDir {
 
 impl Storage for MsgpackDir {
     type Key = String;
-    type SaveError = String; // TODO define error enum
-    type LoadError = String; // TODO define error enum
+    type SaveError = error::SaveError;
+    type LoadError = error::LoadError;
 
     fn save_as<T: Encodable>(&self, obj: &T, name: &Self::Key) -> Result<(), Self::SaveError> {
         let filename = self.path.join(name);
-        let mut buf = File::create(filename).ok().expect("Cannot create file");
+        let mut buf = File::create(filename)?;
         let mut enc = Encoder::new(&mut buf);
-        obj.encode(&mut enc).expect("Cannot encode object");
+        obj.encode(&mut enc)?;
         Ok(())
     }
 
     fn load<T: Decodable>(&self, name: &Self::Key) -> Result<T, Self::LoadError> {
         let filename = self.path.join(name);
-        let mut buf = File::open(filename).expect("Cannot ope file");
+        let mut buf = File::open(filename)?;
         let mut dec = Decoder::new(&mut buf);
-        let obj = Decodable::decode(&mut dec).expect("Cannot decode");
+        let obj = Decodable::decode(&mut dec)?;
         Ok(obj)
     }
+}
+
+mod error {
+    use rmp_serialize::{encode, decode};
+    use std::io;
+    use std::error;
+    use std::fmt;
+
+    pub type SaveError = Error<encode::Error>;
+    pub type LoadError = Error<decode::Error>;
+
+    #[derive(Debug)]
+    pub enum Error<T> {
+        IO(io::Error),
+        Msgpack(T),
+    }
+
+    impl<T> From<io::Error> for Error<T> {
+        fn from(err: io::Error) -> Error<T> {
+            Error::IO(err)
+        }
+    }
+
+    impl From<decode::Error> for Error<decode::Error> {
+        fn from(err: decode::Error) -> Error<decode::Error> {
+            Error::Msgpack(err)
+        }
+    }
+
+    impl From<encode::Error> for Error<encode::Error> {
+        fn from(err: encode::Error) -> Error<encode::Error> {
+            Error::Msgpack(err)
+        }
+    }
+
+    impl<T: fmt::Display> fmt::Display for Error<T> {
+        fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+            match *self {
+                Error::IO(ref err) => err.fmt(f),
+                Error::Msgpack(ref err) => err.fmt(f),
+            }
+        }
+    }
+
+    impl<T: error::Error> error::Error for Error<T> {
+        fn description(&self) -> &str {
+            match *self {
+                Error::IO(ref err) => err.description(),
+                Error::Msgpack(ref err) => err.description(),
+            }
+        }
+    }
+
 }
