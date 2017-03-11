@@ -30,16 +30,17 @@ impl Storage for MsgpackDir {
 
     fn save_as<T: Encodable>(&self, obj: &T, name: &Self::Key) -> Result<(), Self::SaveError> {
         let filename = self.path.join(name);
-        let mut buf = File::create(filename).ok().unwrap();
+        let mut buf = File::create(filename).ok().expect("Cannot create file");
         let mut enc = Encoder::new(&mut buf);
-        obj.encode(&mut enc).unwrap();
+        obj.encode(&mut enc).expect("Cannot encode object");
         Ok(())
     }
 
     fn load<T: Decodable>(&self, name: &Self::Key) -> Result<T, Self::LoadError> {
         let filename = self.path.join(name);
-        let mut buf = File::open(filename).unwrap();
+        let mut buf = File::open(filename).expect("Cannot ope file");
         let mut dec = Decoder::new(&mut buf);
-        Decodable::decode(&mut dec).unwrap()
+        let obj = Decodable::decode(&mut dec).expect("Cannot decode");
+        Ok(obj)
     }
 }
