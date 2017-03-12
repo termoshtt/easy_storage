@@ -1,8 +1,10 @@
 
 use rustc_serialize::{Encodable, Decodable};
+use rmp_serialize::{encode, decode};
 use rmp_serialize::{Encoder, Decoder};
 use std::fs::{File, create_dir_all};
 use std::path::*;
+use std::io;
 
 use super::traits::Storage;
 
@@ -25,8 +27,8 @@ impl MsgpackDir {
 
 impl Storage for MsgpackDir {
     type Key = String;
-    type SaveError = error::SaveError;
-    type LoadError = error::LoadError;
+    type SaveError = SaveError;
+    type LoadError = LoadError;
 
     fn save_as<T: Encodable>(&self, obj: &T, name: &Self::Key) -> Result<(), Self::SaveError> {
         let filename = self.path.join(name);
@@ -45,55 +47,14 @@ impl Storage for MsgpackDir {
     }
 }
 
-mod error {
-    use rmp_serialize::{encode, decode};
-    use std::io;
-    use std::error;
-    use std::fmt;
+#[derive(Debug, EnumError)]
+pub enum SaveError {
+    IO(io::Error),
+    Msgpack(encode::Error),
+}
 
-    pub type SaveError = Error<encode::Error>;
-    pub type LoadError = Error<decode::Error>;
-
-    #[derive(Debug)]
-    pub enum Error<T> {
-        IO(io::Error),
-        Msgpack(T),
-    }
-
-    impl<T> From<io::Error> for Error<T> {
-        fn from(err: io::Error) -> Error<T> {
-            Error::IO(err)
-        }
-    }
-
-    impl From<decode::Error> for Error<decode::Error> {
-        fn from(err: decode::Error) -> Error<decode::Error> {
-            Error::Msgpack(err)
-        }
-    }
-
-    impl From<encode::Error> for Error<encode::Error> {
-        fn from(err: encode::Error) -> Error<encode::Error> {
-            Error::Msgpack(err)
-        }
-    }
-
-    impl<T: fmt::Display> fmt::Display for Error<T> {
-        fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-            match *self {
-                Error::IO(ref err) => err.fmt(f),
-                Error::Msgpack(ref err) => err.fmt(f),
-            }
-        }
-    }
-
-    impl<T: error::Error> error::Error for Error<T> {
-        fn description(&self) -> &str {
-            match *self {
-                Error::IO(ref err) => err.description(),
-                Error::Msgpack(ref err) => err.description(),
-            }
-        }
-    }
-
+#[derive(Debug, EnumError)]
+pub enum LoadError {
+    IO(io::Error),
+    Msgpack(decode::Error),
 }
