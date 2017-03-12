@@ -6,3 +6,4 @@ authors = ["Toshiki Teramura <toshiki.teramura@gmail.com>"]
 [dependencies]
 rustc-serialize = "*"
 rmp-serialize = "*"
+enum-error-derive = "*"
