@@ -16,10 +16,8 @@ pub trait AutoStorage: Storage {
 /// save series of data and the meta data of the series
 pub trait SeriesStorage {
     type Index;
-    type Data;
-    type Info;
-    fn save_series_as(&self, &[Self::Data], &Self::Info, &Self::Index);
-    fn get_info(&Self::Index) -> Self::Info;
-    fn load_series(&Self::Index) -> Vec<Self::Data>;
+    fn save_series_as<Data: Encodable, Info: Encodable>(&self, &[Data], &Info, &Self::Index);
+    fn get_info<Info: Decodable>(&self, &Self::Index) -> Info;
+    fn load_series<Data: Decodable>(&self, &Self::Index) -> Vec<Data>;
     // TODO add lazy loader
 }

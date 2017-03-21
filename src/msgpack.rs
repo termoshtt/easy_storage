@@ -6,7 +6,7 @@ use std::fs::{File, create_dir_all};
 use std::path::*;
 use std::io;
 
-use super::traits::Storage;
+use super::traits::*;
 
 /// Directory where msgpack files are saved.
 pub struct MsgpackDir {
@@ -57,4 +57,32 @@ pub enum SaveError {
 pub enum LoadError {
     IO(io::Error),
     Msgpack(decode::Error),
+}
+
+pub struct MsgpackDB {
+    path: PathBuf,
+    info: MsgpackDir,
+}
+
+impl SeriesStorage for MsgpackDB {
+    type Index = String;
+    fn save_series_as<Data, Info>(&self, data: &[Data], info: &Info, idx: &Self::Index)
+        where Data: Encodable,
+              Info: Encodable
+    {
+        let dir = MsgpackDir::new(idx);
+        for (i, d) in data.iter().enumerate() {
+            let name = format!("{}.msg", i);
+            dir.save_as(d, &name).unwrap();
+        }
+        self.info.save_as(info, idx);
+    }
+
+    fn get_info<Info: Decodable>(&self, idx: &Self::Index) -> Info {
+        self.info.load(idx).unwrap()
+    }
+
+    fn load_series<Data: Decodable>(&self, idx: &Self::Index) -> Vec<Data> {
+        //
+    }
 }
